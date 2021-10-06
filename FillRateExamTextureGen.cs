@@ -14,8 +14,8 @@ public class FillRateExamTextureGen : MonoBehaviour
     public int genSize = 1024;
     public Texture2D result;
 
-    public bool create = false;
-    public bool createFillrate = false;
+    //public bool create = false;
+    public bool createFillrateIndicator = false;
 
     public int maxMipLevel = 11;  //2048
     public int minMipLevel = 6;   //64
@@ -30,15 +30,15 @@ public class FillRateExamTextureGen : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(create)
-        {
-            CreateResolutionTexture();
-            create = false;
-        }
-        if (createFillrate)
+        //if(create)
+        //{
+        //    CreateResolutionTexture();
+        //    create = false;
+        //}
+        if (createFillrateIndicator)
         {
             Create();
-            createFillrate = false;
+            createFillrateIndicator = false;
         }
     }
 
@@ -47,7 +47,7 @@ public class FillRateExamTextureGen : MonoBehaviour
 #if UNITY_EDITOR
 
         int levelCount = maxMipLevel - minMipLevel + 1;
-        int resolution = 1 << maxMipLevel;
+        int resolution = 2 << (maxMipLevel-1);
         Texture2D texture = new Texture2D(resolution, resolution);
 
         for(int i = 0; i < maxMipLevel; ++i)
@@ -65,23 +65,24 @@ public class FillRateExamTextureGen : MonoBehaviour
             int sourcePatternTextureWidth = sourcePatternTexture.width;
             int sourcePatternTextureHeight = sourcePatternTexture.height;
             Color fillColor = fillrateSourceColors[idx];
-            int srcWidth = sourcePatternTexture.width;
-            int srcHeight = sourcePatternTexture.height;
-            Color[] srcTexture = sourcePatternTexture.GetPixels();
-            Color[] cols = new Color[srcWidth * srcHeight];
-            for (int s = 0; s < srcTexture.Length; ++s)
+
+            Color[] texCol = sourcePatternTexture.GetPixels(0, 0, sourcePatternTextureWidth, sourcePatternTextureHeight);
+
+            for(int p = 0; p < texCol.Length; ++p)
             {
-                cols[s] = srcTexture[ s] * fillColor;
+                var col = texCol[p];
+                col *= fillColor;
+                texCol[p] = col;
             }
 
-            int stepX = width / srcWidth;
-            int stepY = height / srcHeight;
+            int copyStepX = width / sourcePatternTextureWidth;
+            int copyStepY = height / sourcePatternTextureHeight;
 
-            for(int sx = 0; sx < stepX;++sx )
+            for (int x = 0; x < copyStepX; ++x)
             {
-                for (int sy = 0; sy < stepY; ++sy)
+                for (int y = 0; y < copyStepY; ++y)
                 {
-                    texture.SetPixels(sx* srcWidth, sy * srcHeight, srcWidth, srcHeight, cols, i);
+                    texture.SetPixels(x * sourcePatternTextureWidth, y * sourcePatternTextureHeight, sourcePatternTextureWidth, sourcePatternTextureHeight, texCol, i);
                 }
             }
         }
